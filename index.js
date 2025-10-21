@@ -188,6 +188,12 @@ app.get('/users/slug/:slugURL', async (req, res) => {
   });
 
 
-app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
-});
+// Start the server only if this file is run directly
+if (require.main === module) {
+  app.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+  });
+}
+
+// Export the app for testing
+module.exports = app;

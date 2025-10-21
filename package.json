@@ -4,7 +4,7 @@
   "description": "internal API end point for user profile",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "jest",
     "start": "node index.js"
   },
   "keywords": [],
@@ -15,5 +15,10 @@
     "express": "^4.19.2",
     "joi": "^18.0.1",
     "slugify": "^1.6.6"
+  },
+  "devDependencies": {
+    "gaxios": "^7.1.2",
+    "jest": "^30.2.0",
+    "supertest": "^7.1.4"
   }
 }
