@@ -3,6 +3,7 @@ const { Firestore } = require('@google-cloud/firestore');
 const slugify = require('slugify');
 const path = require('path');
 const fs = require('fs');
+const Joi = require('joi'); // Import Joi
 
 const app = express();
 const firestore = new Firestore();
@@ -21,15 +22,31 @@ app.get('/openapi.yaml', (req, res) => {
     res.download('openapi.yaml');
 });
 
+// --- Joi Validation Schemas ---
+
+const createUserSchema = Joi.object({
+    name: Joi.string().min(3).max(50).required(),
+    email: Joi.string().email().required(),
+    uid: Joi.string().required(),
+});
+
+const updateUserSchema = Joi.object({
+    name: Joi.string().min(3).max(50),
+    qualification: Joi.string(),
+    profession: Joi.string(),
+}).or('name', 'qualification', 'profession'); // Ensures at least one field is provided
+
 // --- CRUD Operations ---
 
 // Create
 app.put('/users', async (req, res) => {
-  const { name, email, uid } = req.body;
-
-  if (!name || !email || !uid) {
-    return res.status(400).send('Name, email, and uid are required');
+  // Validate the request body
+  const { error, value } = createUserSchema.validate(req.body);
+  if (error) {
+    return res.status(400).send(error.details[0].message);
   }
+
+  const { name, email, uid } = value;
 
   const userRef = firestore.collection('users').doc(uid);
 
@@ -95,7 +112,12 @@ app.get('/users/:uid', async (req, res) => {
 // Update
 app.patch('/users/:uid', async (req, res) => {
     const { uid } = req.params;
-    const { name, qualification, profession } = req.body;
+    
+    // Validate the request body
+    const { error, value } = updateUserSchema.validate(req.body);
+    if (error) {
+        return res.status(400).send(error.details[0].message);
+    }
 
   if (!uid) {
     return res.status(400).send('UID is required');
@@ -109,22 +131,7 @@ app.patch('/users/:uid', async (req, res) => {
       return res.status(404).send('User not found');
     }
 
-    const updateData = {};
-    if (name) {
-        updateData.name = name;
-    }
-    if (qualification) {
-        updateData.qualification = qualification;
-    }
-    if (profession) {
-        updateData.profession = profession;
-    }
-
-    if (Object.keys(updateData).length === 0) {
-        return res.status(400).send('At least one field to update is required');
-    }
-
-    await userRef.update(updateData);
+    await userRef.update(value); // Use the validated value object
     res.status(200).send('User updated');
   } catch (error) {
     console.error('Error updating user:', error);
