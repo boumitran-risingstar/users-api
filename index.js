@@ -38,15 +38,34 @@ app.put('/users', async (req, res) => {
 
     if (userDoc.exists) {
       return res.status(200).send('Document already exists.');
-    } else {
-      const slugURL = slugify(name) + '-' + uid;
-      await userRef.set({
-        name,
-        email,
-        slugURL,
-      });
-      return res.status(201).send({ id: uid, name, email, slugURL });
     }
+
+    const baseSlug = slugify(name, { lower: true, strict: true });
+    const counterRef = firestore.collection('slug_counters').doc(baseSlug);
+    let slugURL;
+
+    await firestore.runTransaction(async (transaction) => {
+        const counterDoc = await transaction.get(counterRef);
+        let newCount;
+
+        if (!counterDoc.exists) {
+            newCount = 1;
+            slugURL = baseSlug;
+        } else {
+            newCount = counterDoc.data().count + 1;
+            slugURL = `${baseSlug}-${newCount}`;
+        }
+        
+        transaction.set(counterRef, { count: newCount }, { merge: true });
+
+        transaction.set(userRef, {
+            name,
+            email,
+            slugURL,
+        });
+    });
+
+    return res.status(201).send({ id: uid, name, email, slugURL });
   } catch (error) {
     console.error('Error creating user:', error);
     return res.status(500).send('Error creating user');
