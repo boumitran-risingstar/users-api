@@ -2,20 +2,23 @@ const express = require('express');
 const { Firestore } = require('@google-cloud/firestore');
 const slugify = require('slugify');
 const path = require('path');
+const fs = require('fs');
 
 const app = express();
 const firestore = new Firestore();
 const port = process.env.PORT || 8080;
 
 app.use(express.json());
-app.use(express.static('public'));
+
+const openapiSpec = fs.readFileSync('openapi.yaml', 'utf8');
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.setHeader('Content-Type', 'text/yaml');
+  res.send(openapiSpec);
 });
 
 app.get('/openapi.yaml', (req, res) => {
-  res.sendFile(path.join(__dirname, 'openapi.yaml'));
+    res.download('openapi.yaml');
 });
 
 // --- CRUD Operations ---
@@ -28,16 +31,16 @@ app.put('/users', async (req, res) => {
     return res.status(400).send('Name, email, and uid are required');
   }
 
-  const itemRef = firestore.collection('items').doc(uid);
+  const userRef = firestore.collection('users').doc(uid);
 
   try {
-    const itemDoc = await itemRef.get();
+    const userDoc = await userRef.get();
 
-    if (itemDoc.exists) {
+    if (userDoc.exists) {
       return res.status(200).send('Document already exists.');
     } else {
       const slugURL = slugify(name) + '-' + uid;
-      await itemRef.set({
+      await userRef.set({
         name,
         email,
         slugURL,
@@ -45,8 +48,8 @@ app.put('/users', async (req, res) => {
       return res.status(201).send({ id: uid, name, email, slugURL });
     }
   } catch (error) {
-    console.error('Error creating item:', error);
-    return res.status(500).send('Error creating item');
+    console.error('Error creating user:', error);
+    return res.status(500).send('Error creating user');
   }
 });
 
@@ -59,14 +62,14 @@ app.get('/users/:uid', async (req, res) => {
   }
 
   try {
-    const itemDoc = await firestore.collection('items').doc(uid).get();
-    if (!itemDoc.exists) {
-      return res.status(404).send('Item not found');
+    const userDoc = await firestore.collection('users').doc(uid).get();
+    if (!userDoc.exists) {
+      return res.status(404).send('User not found');
     }
-    res.status(200).send({ id: itemDoc.id, ...itemDoc.data() });
+    res.status(200).send({ id: userDoc.id, ...userDoc.data() });
   } catch (error) {
-    console.error('Error reading item:', error);
-    res.status(500).send('Error reading item');
+    console.error('Error reading user:', error);
+    res.status(500).send('Error reading user');
   }
 });
 
@@ -80,11 +83,11 @@ app.patch('/users/:uid', async (req, res) => {
   }
 
   try {
-    const itemRef = firestore.collection('items').doc(uid);
-    const itemDoc = await itemRef.get();
+    const userRef = firestore.collection('users').doc(uid);
+    const userDoc = await userRef.get();
 
-    if (!itemDoc.exists) {
-      return res.status(404).send('Item not found');
+    if (!userDoc.exists) {
+      return res.status(404).send('User not found');
     }
 
     const updateData = {};
@@ -102,11 +105,11 @@ app.patch('/users/:uid', async (req, res) => {
         return res.status(400).send('At least one field to update is required');
     }
 
-    await itemRef.update(updateData);
-    res.status(200).send('Item updated');
+    await userRef.update(updateData);
+    res.status(200).send('User updated');
   } catch (error) {
-    console.error('Error updating item:', error);
-    res.status(500).send('Error updating item');
+    console.error('Error updating user:', error);
+    res.status(500).send('Error updating user');
   }
 });
 
@@ -119,18 +122,18 @@ app.delete('/users/:uid', async (req, res) => {
   }
 
   try {
-    const itemRef = firestore.collection('items').doc(uid);
-    const itemDoc = await itemRef.get();
+    const userRef = firestore.collection('users').doc(uid);
+    const userDoc = await userRef.get();
 
-    if (!itemDoc.exists) {
-      return res.status(404).send('Item not found');
+    if (!userDoc.exists) {
+      return res.status(404).send('User not found');
     }
 
-    await itemRef.delete();
-    res.status(200).send('Item deleted');
+    await userRef.delete();
+    res.status(200).send('User deleted');
   } catch (error) {
-    console.error('Error deleting item:', error);
-    res.status(500).send('Error deleting item');
+    console.error('Error deleting user:', error);
+    res.status(500).send('Error deleting user');
   }
 });
 
@@ -143,8 +146,8 @@ app.get('/users/slug/:slugURL', async (req, res) => {
     }
 
     try {
-      const itemsRef = firestore.collection('items');
-      const snapshot = await itemsRef.where('slugURL', '==', slugURL).get();
+      const usersRef = firestore.collection('users');
+      const snapshot = await usersRef.where('slugURL', '==', slugURL).get();
 
       if (snapshot.empty) {
         return res.status(404).send('User not found');

@@ -1,14 +1,14 @@
 openapi: 3.0.0
 info:
   title: Firestore CRUD API
-  description: An API for performing CRUD operations and generating slugs.
+  description: An API for performing CRUD operations on users.
   version: 1.0.0
 servers:
-  - url: https://us-central1-your-project-id.cloudfunctions.net
+  - url: https://users-164502969077.asia-southeast1.run.app
 paths:
-  /create:
+  /users:
     put:
-      summary: Create a new item
+      summary: Create a new user
       requestBody:
         required: true
         content:
@@ -24,39 +24,36 @@ paths:
                   type: string
       responses:
         '201':
-          description: Item created successfully
+          description: User created successfully
         '200':
           description: Document already exists.
         '400':
           description: Name, email, and uid are required
-        '405':
-          description: Method Not Allowed
         '500':
-          description: Error creating item
-  /read:
+          description: Error creating user
+  /users/{uid}:
     get:
-      summary: Read an item by ID
+      summary: Read a user by UID
       parameters:
         - name: uid
-          in: query
+          in: path
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Item retrieved successfully
+          description: User retrieved successfully
         '400':
           description: UID is required
         '404':
-          description: Item not found
+          description: User not found
         '500':
-          description: Error reading item
-  /update:
-    put:
-      summary: Update an item by ID
+          description: Error reading user
+    patch:
+      summary: Update a user by UID
       parameters:
         - name: uid
-          in: query
+          in: path
           required: true
           schema:
             type: string
@@ -70,54 +67,47 @@ paths:
                 name:
                   type: string
                 qualification:
-                  type: array
-                  items:
-                    type: string
+                  type: string
                 profession:
-                  type: array
-                  items:
-                    type: string
+                  type: string
       responses:
         '200':
-          description: Item updated successfully
+          description: User updated successfully
         '400':
           description: At least one field to update is required
         '404':
-          description: Item not found
+          description: User not found
         '500':
-          description: Error updating item
-  /delete:
+          description: Error updating user
     delete:
-      summary: Delete an item by ID
+      summary: Delete a user by UID
       parameters:
         - name: uid
-          in: query
+          in: path
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: Item deleted successfully
+          description: User deleted successfully
         '400':
           description: UID is required
         '404':
-          description: Item not found
+          description: User not found
         '500':
-          description: Error deleting item
-  /getUserBySlug:
+          description: Error deleting user
+  /users/slug/{slugURL}:
     get:
       summary: Get a user by slugURL
       parameters:
         - name: slugURL
-          in: query
+          in: path
           required: true
           schema:
             type: string
       responses:
         '200':
           description: User retrieved successfully
-        '400':
-          description: slugURL is required
         '404':
           description: User not found
         '500':
