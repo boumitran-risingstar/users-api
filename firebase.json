@@ -4,5 +4,17 @@
     "location": "asia-southeast1",
     "rules": "firestore.rules",
     "indexes": "firestore.indexes.json"
+  },
+  "hosting": {
+    "framework": "express",
+    "region": "asia-southeast1",
+    "source": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "Dockerfile",
+      "service.yaml"
+    ]
   }
 }

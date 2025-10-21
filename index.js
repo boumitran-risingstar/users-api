@@ -1,17 +1,18 @@
-const functions = require('firebase-functions');
-const {Firestore} = require('@google-cloud/firestore');
+const express = require('express');
+const { Firestore } = require('@google-cloud/firestore');
 const slugify = require('slugify');
 
+const app = express();
 const firestore = new Firestore();
+const port = process.env.PORT || 8080;
+
+app.use(express.json());
+app.use(express.static('public'));
 
 // --- CRUD Operations ---
 
 // Create
-exports.create = functions.https.onRequest(async (req, res) => {
-  if (req.method !== 'PUT') {
-    return res.status(405).send('Method Not Allowed');
-  }
-
+app.put('/users', async (req, res) => {
   const { name, email, uid } = req.body;
 
   if (!name || !email || !uid) {
@@ -41,8 +42,8 @@ exports.create = functions.https.onRequest(async (req, res) => {
 });
 
 // Read
-exports.read = functions.https.onRequest(async (req, res) => {
-  const { uid } = req.query;
+app.get('/users/:uid', async (req, res) => {
+  const { uid } = req.params;
 
   if (!uid) {
     return res.status(400).send('UID is required');
@@ -61,9 +62,9 @@ exports.read = functions.https.onRequest(async (req, res) => {
 });
 
 // Update
-exports.update = functions.https.onRequest(async (req, res) => {
-  const { uid } = req.query;
-  const { name, qualification, profession } = req.body;
+app.patch('/users/:uid', async (req, res) => {
+    const { uid } = req.params;
+    const { name, qualification, profession } = req.body;
 
   if (!uid) {
     return res.status(400).send('UID is required');
@@ -101,8 +102,8 @@ exports.update = functions.https.onRequest(async (req, res) => {
 });
 
 // Delete
-exports.delete = functions.https.onRequest(async (req, res) => {
-  const { uid } = req.query;
+app.delete('/users/:uid', async (req, res) => {
+    const { uid } = req.params;
 
   if (!uid) {
     return res.status(400).send('UID is required');
@@ -124,21 +125,22 @@ exports.delete = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.getUserBySlug = functions.https.onRequest(async (req, res) => {
-    const { slugURL } = req.query;
-  
+// Get user by slug
+app.get('/users/slug/:slugURL', async (req, res) => {
+    const { slugURL } = req.params;
+
     if (!slugURL) {
       return res.status(400).send('slugURL is required');
     }
-  
+
     try {
       const itemsRef = firestore.collection('items');
       const snapshot = await itemsRef.where('slugURL', '==', slugURL).get();
-  
+
       if (snapshot.empty) {
         return res.status(404).send('User not found');
       }
-  
+
       const user = snapshot.docs[0];
       res.status(200).send({ id: user.id, ...user.data() });
     } catch (error) {
@@ -146,3 +148,8 @@ exports.getUserBySlug = functions.https.onRequest(async (req, res) => {
       res.status(500).send('Error getting user by slugURL');
     }
   });
+
+
+app.listen(port, () => {
+  console.log(`Server listening on port ${port}`);
+});
