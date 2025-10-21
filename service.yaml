@@ -2,14 +2,14 @@ apiVersion: serving.knative.dev/v1
 kind: Service
 metadata:
   name: users
+  annotations:
+    run.googleapis.com/location: asia-southeast1
 spec:
   template:
     metadata:
       annotations:
         run.googleapis.com/ingress: internal
     spec:
-      serviceAccountName: firestore-users-service@mouth-metrics.iam.gserviceaccount.com
       containers:
-        - image: asia-southeast1-docker.pkg.dev/mouth-metrics/users-service-repo/users-service
-          ports:
+        - ports:
             - containerPort: 8080
