@@ -6,6 +6,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
+    "public": "public",
     "framework": "express",
     "region": "asia-southeast1",
     "source": ".",
